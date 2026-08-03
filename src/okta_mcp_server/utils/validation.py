@@ -6,7 +6,7 @@
 # See the License for the specific language governing permissions and limitations under the License.
 
 """
-Input validation utilities for Okta MCP Server.
+Input validation utilities for Okta Open Source MCP Server.
 
 This module provides validation functions to prevent path traversal and SSRF attacks
 by ensuring user-supplied IDs do not contain malicious characters that could manipulate
@@ -376,7 +376,7 @@ def validate_ids(*id_params: str, error_return_type: str = "list"):
                             if error_return_type == "dict":
                                 return {"error": str(e)}
                             else:  # default to list
-                                return [f"Error: {e}"]
+                                return [{"error": str(e)}]
 
             return await func(*args, **kwargs)
 
@@ -399,7 +399,7 @@ def validate_ids(*id_params: str, error_return_type: str = "list"):
                             if error_return_type == "dict":
                                 return {"error": str(e)}
                             else:
-                                return [f"Error: {e}"]
+                                return [{"error": str(e)}]
 
             return func(*args, **kwargs)
 
@@ -552,7 +552,7 @@ def validate_os_version_params(*param_names: str, error_return_type: str = "dict
             if error:
                 if error_return_type == "dict":
                     return {"error": error}
-                return [f"Error: {error}"]
+                return [{"error": error}]
             return await func(*args, **kwargs)
 
         @functools.wraps(func)
@@ -564,7 +564,7 @@ def validate_os_version_params(*param_names: str, error_return_type: str = "dict
             if error:
                 if error_return_type == "dict":
                     return {"error": error}
-                return [f"Error: {error}"]
+                return [{"error": error}]
             return func(*args, **kwargs)
 
         if inspect.iscoroutinefunction(func):

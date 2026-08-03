@@ -1,15 +1,18 @@
 <div align="center">
 
-![Okta MCP Server](assets/thumbnail.png)
+![Okta Open Source MCP Server](https://raw.githubusercontent.com/okta/okta-mcp-server/main/assets/thumbnail.png)
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Python Version](https://img.shields.io/badge/python-%3E%3D3.8-brightgreen.svg)](https://python.org/)
+[![Python Version](https://img.shields.io/badge/python-%3E%3D3.13-brightgreen.svg)](https://python.org/)
 
 </div>
 
+## :tada: __It's Official__ :tada:
+The Okta Open Source MCP Server integrates with LLMs and AI agents, allowing you to perform various Okta management operations using natural language and is Generally Available (GA).
+
 [MCP (Model Context Protocol)](https://modelcontextprotocol.io/introduction) is an open protocol introduced by Anthropic that standardizes how large language models communicate with external tools, resources or remote services.
 
-The Okta MCP Server integrates with LLMs and AI agents, allowing you to perform various Okta management operations using natural language. For instance, you could simply ask Claude Desktop to perform Okta management operations:
+The Okta Open Source MCP Server integrates with LLMs and AI agents, allowing you to perform various Okta management operations using natural language. For instance, you could simply ask Claude Desktop to perform Okta management operations:
 
 - > Create a new user and add them to the Engineering group
 - > Show me all failed login attempts from the last 24 hours
@@ -35,16 +38,16 @@ This MCP server utilizes [Okta's Python SDK v3.4.1](https://github.com/okta/okta
 
 **Prerequisites:**
 
-- [Python 3.8+](https://python.org/downloads) OR [Docker](https://docs.docker.com/get-docker/)
+- [Python 3.13+](https://python.org/downloads) OR [Docker](https://docs.docker.com/get-docker/)
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) package manager (if not using Docker)
 - [Claude Desktop](https://claude.ai/download) or any other [MCP Client](https://modelcontextprotocol.io/clients)
 - [Okta](https://okta.com/) account with appropriate permissions
 
 <br/>
 
-### Install the Okta MCP Server
+### Install the Okta Open Source MCP Server
 
-Install Okta MCP Server and configure it to work with your preferred MCP Client.
+Install Okta Open Source MCP Server and configure it to work with your preferred MCP Client.
 
 Choose one of the following installation methods:
 
@@ -301,6 +304,114 @@ docker run -i --rm \
 
 </details>
 
+<details>
+<summary><b> Option 3: PyPI (uvx / pipx / pip)</b></summary>
+
+The server is published to [PyPI as `okta-mcp-server`](https://pypi.org/project/okta-mcp-server/), so you can run it without cloning the repository. This is the easiest option if you only want to *use* the server (not modify it).
+
+**Prerequisite:** Python 3.13+ and either [`uv`](https://docs.astral.sh/uv/getting-started/installation/) (recommended, provides `uvx`) or [`pipx`](https://pipx.pypa.io/stable/installation/).
+
+**Quick smoke test (optional):**
+```bash
+# With uv — no install needed, runs in an ephemeral environment
+uvx okta-mcp-server --help
+
+# Or install globally with pipx
+pipx install okta-mcp-server
+okta-mcp-server --help
+```
+
+**Claude Desktop with PyPI (Device Authorization Grant):**
+
+Add the following to your `claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "okta-mcp-server": {
+      "command": "uvx",
+      "args": ["okta-mcp-server"],
+      "env": {
+        "OKTA_ORG_URL": "<OKTA_ORG_URL>",
+        "OKTA_CLIENT_ID": "<OKTA_CLIENT_ID>",
+        "OKTA_SCOPES": "<OKTA_SCOPES>"
+      }
+    }
+  }
+}
+```
+
+**Claude Desktop with PyPI (Private Key JWT — Browserless):**
+```json
+{
+  "mcpServers": {
+    "okta-mcp-server": {
+      "command": "uvx",
+      "args": ["okta-mcp-server"],
+      "env": {
+        "OKTA_ORG_URL": "<OKTA_ORG_URL>",
+        "OKTA_CLIENT_ID": "<OKTA_CLIENT_ID>",
+        "OKTA_SCOPES": "<OKTA_SCOPES>",
+        "OKTA_PRIVATE_KEY": "<PRIVATE_KEY_IF_NEEDED>",
+        "OKTA_KEY_ID": "<KEY_ID_IF_NEEDED>"
+      }
+    }
+  }
+}
+```
+
+**VS Code with PyPI:**
+```json
+{
+  "mcp": {
+    "inputs": [
+      {
+        "type": "promptString",
+        "description": "Okta Organization URL (e.g., https://dev-123456.okta.com)",
+        "id": "OKTA_ORG_URL"
+      },
+      {
+        "type": "promptString",
+        "description": "Okta Client ID",
+        "id": "OKTA_CLIENT_ID",
+        "password": true
+      },
+      {
+        "type": "promptString",
+        "description": "Okta Scopes (separated by whitespace)",
+        "id": "OKTA_SCOPES"
+      }
+    ],
+    "servers": {
+      "okta-mcp-server": {
+        "command": "uvx",
+        "args": ["okta-mcp-server"],
+        "env": {
+          "OKTA_ORG_URL": "${input:OKTA_ORG_URL}",
+          "OKTA_CLIENT_ID": "${input:OKTA_CLIENT_ID}",
+          "OKTA_SCOPES": "${input:OKTA_SCOPES}"
+        }
+      }
+    }
+  }
+}
+```
+
+**Pinning a version (recommended for production):**
+
+`uvx okta-mcp-server` always resolves to the latest published release. To pin a specific version, use the `package@version` form:
+```json
+"args": ["okta-mcp-server@1.1.2"]
+```
+
+**Upgrading:**
+- `uvx` — no action needed for unpinned installs; use `uv cache clean` to force a refresh, or bump the pinned version.
+- `pipx` — run `pipx upgrade okta-mcp-server`.
+
+> [!TIP]
+> Prefer Option 1 (Docker) or Option 2 (uv from source) if you need to modify the server code or run in a locked-down container environment. Choose Option 3 when you just want the released server on your workstation with minimal setup.
+
+</details>
+
 ### Configure with Different MCP Clients
 
 <details>
@@ -367,7 +478,7 @@ Add the following to your VS Code `settings.json`:
 <details>
 <summary><b>Other MCP Clients</b></summary>
 
-To use Okta MCP Server with any other MCP Client, you can manually add this configuration to the client and restart for changes to take effect:
+To use Okta Open Source MCP Server with any other MCP Client, you can manually add this configuration to the client and restart for changes to take effect:
 
 ```json
 {
@@ -442,7 +553,7 @@ Restart your MCP Client (Claude Desktop, VS Code, etc.) and ask it to help you m
 
 ## 🛠️ Supported Tools
 
-The Okta MCP Server provides the following tools for LLMs to interact with your Okta tenant:
+The Okta Open Source MCP Server provides the following tools for LLMs to interact with your Okta tenant:
 
 ### Users
 
@@ -642,7 +753,7 @@ All destructive operations (deleting groups, applications, policies, policy rule
 
 ## � Scope-Based Tool Loading
 
-The Okta MCP Server uses a **scope-based tool loading** mechanism to ensure that only the tools your application is authorized to use are exposed to the LLM.
+The Okta Open Source MCP Server uses a **scope-based tool loading** mechanism to ensure that only the tools your application is authorized to use are exposed to the LLM.
 
 ### How it works
 
@@ -703,7 +814,7 @@ Then restart your MCP client so the server picks up the new scope list.
 
 ## �🔐 Authentication
 
-The Okta MCP Server uses the Okta Management API and requires authentication to access your Okta tenant.
+The Okta Open Source MCP Server uses the Okta Management API and requires authentication to access your Okta tenant.
 
 ### Authentication Flow
 
@@ -724,7 +835,7 @@ The MCP Server will automatically initiate the appropriate authentication flow b
 
 ## 🩺 Troubleshooting
 
-When encountering issues with the Okta MCP Server, several troubleshooting options are available to help diagnose and resolve problems.
+When encountering issues with the Okta Open Source MCP Server, several troubleshooting options are available to help diagnose and resolve problems.
 
 ### 🐞 Debug Mode
 
@@ -736,6 +847,28 @@ export OKTA_LOG_LEVEL=DEBUG
 
 > [!TIP]
 > Debug mode is particularly useful when troubleshooting connection or authentication issues.
+
+### 🧵 Include raw traceback in serializer-failure envelopes
+
+When a tool response fails the JSON serialization boundary (rare — usually a
+bug in a new SDK payload shape), the server returns a JSON-native failure
+envelope of the form:
+
+```json
+{"ok": false, "error": {...}, "status_code": null, "raw": {}}
+```
+
+The last 4096 characters of `traceback.format_exc()` are only attached as
+`raw.traceback_tail` when the operator explicitly opts in:
+
+```bash
+export OKTA_MCP_INCLUDE_RAW=1   # accepts 1 / true / yes / on
+```
+
+> [!WARNING]
+> `OKTA_MCP_INCLUDE_RAW` exposes server-side stack frames to MCP clients — use
+> it only when triaging a specific failure. The full traceback is always
+> written to the server log via `logger.exception` regardless of this flag.
 
 ### 🚨 Common Issues
 
@@ -821,11 +954,11 @@ uv pip install -e .
 ```
 
 > [!NOTE]
-> This server requires [Python 3.8 or higher](https://python.org/downloads) and [uv](https://docs.astral.sh/uv/).
+> This server requires [Python 3.13 or higher](https://python.org/downloads) and [uv](https://docs.astral.sh/uv/).
 
 ## 🔒 Security
 
-The Okta MCP Server prioritizes security:
+The Okta Open Source MCP Server prioritizes security:
 
 - Credentials are managed through secure authentication flows
 - No sensitive information is stored in plain text  
@@ -871,7 +1004,7 @@ This project is licensed under the Apache 2.0 license. See the [LICENSE](LICENSE
 
 <p align="center">
   <picture>
-    <img alt="Okta Logo" src="assets/logo.png" width="150">
+    <img alt="Okta Logo" src="https://raw.githubusercontent.com/okta/okta-mcp-server/main/assets/logo.png" width="150">
   </picture>
 </p>
 <p align="center">

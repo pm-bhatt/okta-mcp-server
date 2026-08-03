@@ -16,6 +16,7 @@ from mcp.server.fastmcp import FastMCP
 
 from okta_mcp_server.utils.auth.auth_manager import OktaAuthManager
 from okta_mcp_server.utils.scope_guard import get_disabled_tools, get_startup_scopes, prune_tools_by_scope
+from okta_mcp_server.utils.serialization import json_response
 
 LOG_FILE = os.environ.get("OKTA_LOG_FILE")
 
@@ -29,19 +30,23 @@ class OktaAppContext:
 async def okta_authorisation_flow(server: FastMCP) -> AsyncIterator[OktaAppContext]:
     """
     Manages the application lifecycle. It initializes the OktaManager on startup,
-    performs authorization, and yields the context for use in tools.
+    re-using a cached token from the OS keyring when one is still valid, and yields
+    the context for use in tools.
     """
     logger.info("Starting Okta authorization flow")
     manager = OktaAuthManager()
-    await manager.authenticate()
-    logger.info("Okta authentication completed successfully")
+
+    if manager.is_cached_token_valid():
+        logger.info("Re-using cached Okta token from keyring; skipping interactive auth")
+    else:
+        if not await manager.is_valid_token():
+            logger.error("Authentication failed: no token available after refresh and re-auth")
+            sys.exit(1)
+        logger.info("Okta authentication completed (refresh or new auth)")
+
     prune_tools_by_scope(server, manager)
 
-    try:
-        yield OktaAppContext(okta_auth_manager=manager)
-    finally:
-        logger.debug("Clearing Okta tokens")
-        manager.clear_tokens()
+    yield OktaAppContext(okta_auth_manager=manager)
 
 
 mcp = FastMCP("Okta IDaaS MCP Server", lifespan=okta_authorisation_flow)
@@ -52,6 +57,7 @@ mcp = FastMCP("Okta IDaaS MCP Server", lifespan=okta_authorisation_flow)
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
+@json_response
 async def get_scope_status() -> dict:
     """Report which Okta MCP tools are active and which are disabled due to missing OAuth scopes.
 
@@ -113,7 +119,7 @@ async def get_scope_status() -> dict:
 
 
 def main():
-    """Run the Okta MCP server."""
+    """Run the Okta Open Source MCP Server."""
     logger.remove()
 
     if LOG_FILE:
@@ -130,7 +136,7 @@ def main():
         sys.stderr, level=os.environ.get("OKTA_LOG_LEVEL", "INFO"), format="{time} {level} {message}", serialize=True
     )
 
-    logger.info("Starting Okta MCP Server")
+    logger.info("Starting Okta Open Source MCP Server")
     from okta_mcp_server.tools.applications import applications  # noqa: F401
     from okta_mcp_server.tools.customization.brands import brands  # noqa: F401
     from okta_mcp_server.tools.customization.custom_domains import custom_domains  # noqa: F401
